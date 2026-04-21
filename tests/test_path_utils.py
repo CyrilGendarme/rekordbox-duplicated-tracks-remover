@@ -48,9 +48,9 @@ class TestFindFirstDropboxFile:
         """Test finding an existing file."""
         test_file = temp_dir / "track.mp3"
         test_file.write_text("audio content")
-        
+
         result = find_first_dropbox_file(str(temp_dir), "track.mp3")
-        
+
         assert result is not None
         assert "track.mp3" in result
 
@@ -65,9 +65,9 @@ class TestFindFirstDropboxFile:
         subdir.mkdir(parents=True)
         test_file = subdir / "track.mp3"
         test_file.write_text("audio content")
-        
+
         result = find_first_dropbox_file(str(temp_dir), "track.mp3")
-        
+
         assert result is not None
         assert "track.mp3" in result
 
@@ -81,15 +81,20 @@ class TestFindFirstDropboxFile:
         result = find_first_dropbox_file("/nonexistent/dir", "file.mp3")
         assert result is None
 
+    def test_find_first_dropbox_file_none_dropbox_dir(self):
+        """Test with missing Dropbox directory value."""
+        result = find_first_dropbox_file(None, "file.mp3")
+        assert result is None
+
     def test_find_first_dropbox_file_multiple_matches(self, temp_dir):
         """Test when multiple files match (returns first)."""
         (temp_dir / "track.mp3").write_text("audio1")
         subdir = temp_dir / "subdir"
         subdir.mkdir()
         (subdir / "track.mp3").write_text("audio2")
-        
+
         result = find_first_dropbox_file(str(temp_dir), "track.mp3")
-        
+
         assert result is not None
         assert "track.mp3" in result
 
@@ -97,6 +102,30 @@ class TestFindFirstDropboxFile:
         """Test that it ignores directories with matching names."""
         # Create a directory with the target name
         (temp_dir / "track.mp3").mkdir()
-        
+
         result = find_first_dropbox_file(str(temp_dir), "track.mp3")
         assert result is None
+
+    def test_find_first_dropbox_file_case_insensitive_fallback(self, temp_dir):
+        """Test case-insensitive filename matching."""
+        test_file = temp_dir / "K-RAD - 120STRINGS [K1203].MP3"
+        test_file.write_text("audio content")
+
+        result = find_first_dropbox_file(
+            str(temp_dir), "k-rad - 120strings [k1203].mp3"
+        )
+
+        assert result is not None
+        assert result.endswith("K-RAD - 120STRINGS [K1203].MP3")
+
+    def test_find_first_dropbox_file_normalized_fallback(self, temp_dir):
+        """Test normalized fallback when punctuation differs."""
+        test_file = temp_dir / "k-rad - 120strings k1203.mp3"
+        test_file.write_text("audio content")
+
+        result = find_first_dropbox_file(
+            str(temp_dir), "k-rad - 120strings [k1203].mp3"
+        )
+
+        assert result is not None
+        assert result.endswith("k-rad - 120strings k1203.mp3")

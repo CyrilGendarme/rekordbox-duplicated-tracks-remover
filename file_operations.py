@@ -38,18 +38,3 @@ def safe_delete_file(
             print(f"  Error: {e}", file=sys.stderr)
         return False
 
-
-def scan_audio_files(directory: str | Path) -> dict[str, str]:
-    """Scan directory for audio files and return {filename: full_path}."""
-    audio_extensions = {".mp3", ".m4a", ".aac", ".flac", ".wav", ".ogg", ".wma"}
-    files_map: dict[str, str] = {}
-    
-    dir_path = Path(directory)
-    if not dir_path.exists():
-        return files_map
-    
-    for file_path in dir_path.rglob("*"):
-        if file_path.is_file() and file_path.suffix.lower() in audio_extensions:
-            files_map[file_path.name] = str(file_path)
-    
-    return files_map
