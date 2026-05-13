@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+
 def _item_tags_lower(item: dict[str, Any]) -> set[str]:
     raw_tags = item.get("tags") or []
     if isinstance(raw_tags, str):

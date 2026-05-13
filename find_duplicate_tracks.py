@@ -96,27 +96,30 @@ def perform_cleanup(
             dropbox_dir, Path(item.get("path_rekordbox_dir", "")).name
         )
 
-        safe_delete_file(
-            dropbox_file_path,
-            reason="remove dropbox dir file",
-            log_enabled=True,
-            verbose=False,
-        )
+        if dropbox_file_path is not None:
+            safe_delete_file(
+                dropbox_file_path,
+                reason="remove dropbox dir file",
+                log_enabled=True,
+                verbose=False,
+            )
 
         # print(
         #     f"\n[DRY RUN] Would delete Dropbox file : {item.get('id')} | {dropbox_file_path}"
         # )
 
     # Step 4: Relocate remaining track to Dropbox
-    relocate_rekordbox_track(
-        db,
-        metadata_owner_item.get("id", "?"),
-        find_first_dropbox_file(
-            dropbox_dir, Path(file_owner_item.get("path_rekordbox_dir", "")).name
-        ),
-        verbose=False,
-        log_enabled=True,
+    dropbox_owner_path = find_first_dropbox_file(
+        dropbox_dir, Path(file_owner_item.get("path_rekordbox_dir", "")).name
     )
+    if dropbox_owner_path is not None:
+        relocate_rekordbox_track(
+            db,
+            metadata_owner_item.get("id", "?"),
+            dropbox_owner_path,
+            verbose=False,
+            log_enabled=True,
+        )
 
     # print(
     #     f"\n[DRY RUN] Would relocate track with id: {metadata_owner_item.get('id', '?')} to Dropbox path: {find_first_dropbox_file(dropbox_dir, Path(file_owner_item.get('path', '')).name)}."
