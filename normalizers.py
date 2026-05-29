@@ -6,6 +6,11 @@ import re
 from pathlib import Path
 from typing import Any
 
+from config import (
+    FILENAME_NORMALIZE_PATTERN,
+    POSIX_PATH_SEPARATOR,
+    WINDOWS_PATH_SEPARATOR,
+)
 
 def normalize(value: str, case_sensitive: bool) -> str:
     """Normalize a string value for comparison."""
@@ -24,7 +29,7 @@ def normalize_filename(filename: str) -> str:
     """Normalize filename for comparison by removing special characters and extensions."""
     # Remove extension, convert to lowercase, remove special chars
     name_without_ext = Path(filename).stem
-    normalized = re.sub(r"[^a-z0-9\s]", "", name_without_ext.lower())
+    normalized = re.sub(FILENAME_NORMALIZE_PATTERN, "", name_without_ext.lower())
     # Normalize whitespace
     normalized = " ".join(normalized.split())
     return normalized
@@ -32,4 +37,9 @@ def normalize_filename(filename: str) -> str:
 
 def normalize_path_for_compare(path: str | Path) -> str:
     """Normalize a path for comparison (case-insensitive, forward slashes)."""
-    return str(path).replace("\\", "/").rstrip("/").casefold()
+    return (
+        str(path)
+        .replace(WINDOWS_PATH_SEPARATOR, POSIX_PATH_SEPARATOR)
+        .rstrip(POSIX_PATH_SEPARATOR)
+        .casefold()
+    )

@@ -2,27 +2,32 @@ from __future__ import annotations
 
 from typing import Any
 
+from config import (
+    EMPTY_STRING,
+    HOT_CUES_COUNT_KEY,
+    MEMORY_CUES_COUNT_KEY,
+    MY_TAG_ATTRIBUTE,
+    TAG_NAME_ATTRIBUTES,
+    TRACK_TAG_ATTRIBUTES,
+)
 from normalizers import safe_string
 
 
 def _extract_tag_name(value: Any) -> str:
     """Extract a tag name from the supported Rekordbox tag shapes."""
-    name = safe_string(getattr(value, "Name", "")).strip()
-    if name:
-        return name
+    for attr_name in TAG_NAME_ATTRIBUTES:
+        name = safe_string(getattr(value, attr_name, EMPTY_STRING)).strip()
+        if name:
+            return name
 
-    name = safe_string(getattr(value, "TagName", "")).strip()
-    if name:
-        return name
-
-    my_tag = getattr(value, "MyTag", None)
-    return safe_string(getattr(my_tag, "Name", "")).strip()
+    my_tag = getattr(value, MY_TAG_ATTRIBUTE, None)
+    return safe_string(getattr(my_tag, TAG_NAME_ATTRIBUTES[0], EMPTY_STRING)).strip()
 
 
 def extract_track_tags(content: Any) -> list[str]:
     """Best-effort extraction of tag names from a Rekordbox content object."""
     tag_values: list[Any] = []
-    for attr_name in ("MyTagNames", "MyTags", "Tags"):
+    for attr_name in TRACK_TAG_ATTRIBUTES:
         value = getattr(content, attr_name, None)
         if value:
             tag_values.append(value)
@@ -64,6 +69,6 @@ def extract_track_cues(content: Any) -> dict[str, list[str]]:
         return cues_cnt
 
     return {
-        "hot_cues_cnt": collect(hot_cues=True),
-        "memory_cues_cnt": collect(hot_cues=False),
+        HOT_CUES_COUNT_KEY: collect(hot_cues=True),
+        MEMORY_CUES_COUNT_KEY: collect(hot_cues=False),
     }

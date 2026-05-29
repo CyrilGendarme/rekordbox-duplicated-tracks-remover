@@ -4,55 +4,58 @@ from __future__ import annotations
 
 import argparse
 
+from config import (
+    CLI_AUTO_CLEANUP_HELP,
+    CLI_CASE_SENSITIVE_HELP,
+    CLI_DESCRIPTION,
+    CLI_DROPBOX_DIR_HELP,
+    CLI_INCLUDE_EMPTY_HELP,
+    CLI_KEY_HELP,
+    CLI_TEST_MODE_HELP,
+    CLI_TITLES_ONLY_HELP,
+    CLI_YOUTUBE_DIR_HELP,
+)
 
 def parse_args() -> argparse.Namespace:
     """Parse command-line arguments."""
-    parser = argparse.ArgumentParser(
-        description=(
-            "Read a Rekordbox collection and print duplicate tracks "
-            "(same title + artist)."
-        )
-    )
+    parser = argparse.ArgumentParser(description=CLI_DESCRIPTION)
     parser.add_argument(
         "--key",
-        help=(
-            "Optional SQLCipher key for Rekordbox database decryption. "
-            "Useful for some Rekordbox >= 6.6.5 installs."
-        ),
+        help=CLI_KEY_HELP,
     )
     parser.add_argument(
         "--case-sensitive",
         action="store_true",
-        help="Use case-sensitive duplicate matching (default is case-insensitive).",
+        help=CLI_CASE_SENSITIVE_HELP,
     )
     parser.add_argument(
         "--include-empty",
         action="store_true",
-        help="Include tracks even if title or artist is empty.",
+        help=CLI_INCLUDE_EMPTY_HELP,
     )
     parser.add_argument(
         "--youtube-dir",
         type=str,
-        help="Scan directory for audio files and match against duplicate paths using filename.",
+        help=CLI_YOUTUBE_DIR_HELP,
     )
     parser.add_argument(
         "--dropbox-dir",
         type=str,
-        help="Dropbox rekordbox folder path for file consolidation.",
+        help=CLI_DROPBOX_DIR_HELP,
     )
     parser.add_argument(
         "--auto-cleanup",
         action="store_true",
-        help="Automatically cleanup and relocate files (requires --dropbox-dir).",
+        help=CLI_AUTO_CLEANUP_HELP,
     )
     parser.add_argument(
         "--test-mode",
         action="store_true",
-        help="Test mode: process only first match then exit.",
+        help=CLI_TEST_MODE_HELP,
     )
     parser.add_argument(
         "--titles-only",
         action="store_true",
-        help="Only print 'artist - title' lines to console.",
+        help=CLI_TITLES_ONLY_HELP,
     )
     return parser.parse_args()

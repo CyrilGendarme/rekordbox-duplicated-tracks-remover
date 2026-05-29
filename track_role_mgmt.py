@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from config import COPYRIGHT_OK_TAG, HOT_CUES_COUNT_KEY, NOT_TAGGED_TAG
 
 def _item_tags_lower(item: dict[str, Any]) -> set[str]:
     raw_tags = item.get("tags") or []
@@ -21,7 +22,7 @@ def _select_file_owner_item(items: list[dict[str, Any]]) -> dict[str, Any] | Non
         return None
 
     copyright_candidates = [
-        item for item in items if "copyright ok" in _item_tags_lower(item)
+        item for item in items if COPYRIGHT_OK_TAG in _item_tags_lower(item)
     ]
     if copyright_candidates:
         return copyright_candidates[0]
@@ -43,8 +44,8 @@ def _select_metadata_owner_item(
     scored_items = [
         {
             "item": item,
-            "hot_cues_count": (item.get("cues") or {}).get("hot_cues_cnt", 0),
-            "is_not_tagged": "not tagged" in _item_tags_lower(item),
+            "hot_cues_count": (item.get("cues") or {}).get(HOT_CUES_COUNT_KEY, 0),
+            "is_not_tagged": NOT_TAGGED_TAG in _item_tags_lower(item),
         }
         for item in items
     ]

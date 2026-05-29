@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from config import DROPBOX_FILE_GLOB
+
 from normalizers import normalize_filename
 
 
@@ -37,7 +39,7 @@ def find_first_dropbox_file(
 
     first_case_insensitive_match: str | None = None
     first_normalized_match: str | None = None
-    for file_path in dropbox_root.rglob("*"):
+    for file_path in dropbox_root.rglob(DROPBOX_FILE_GLOB):
         if not file_path.is_file():
             continue
 

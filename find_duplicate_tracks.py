@@ -11,6 +11,23 @@ from collections import defaultdict
 from typing import Any
 
 from cli import parse_args
+from config import (
+    DB_COMMIT_SUCCESS_MESSAGE,
+    DEFAULT_LOG_ENABLED,
+    DROPBOX_FILE_DELETE_REASON,
+    EMPTY_STRING,
+    EXIT_CODE_DB_OPEN_ERROR,
+    EXIT_CODE_IMPORT_ERROR,
+    EXIT_CODE_SUCCESS,
+    LOCAL_FILE_DELETE_REASON,
+    NO_DUPLICATES_FOUND_MESSAGE,
+    PYREKORDBOX_IMPORT_ERROR_MESSAGE,
+    REKORDBOX_CLOSE_METHOD,
+    REKORDBOX_COMMIT_METHOD,
+    REKORDBOX_OPEN_ERROR_TEMPLATE,
+    ROOT_PATH_PREFIX,
+    UNKNOWN_CONTENT_ID,
+)
 
 from normalizers import normalize, safe_string
 from rekordbox_helpers import get_artist_name
@@ -36,13 +53,16 @@ def perform_cleanup(
 
             safe_delete_file(
                 item.get("path_local_dir"),
-                reason="remove local downloaded file",
-                log_enabled=True,
+                reason=LOCAL_FILE_DELETE_REASON,
+                log_enabled=DEFAULT_LOG_ENABLED,
                 verbose=False,
             )
 
             delete_rekordbox_track(
-                db, str(item.get("id", "")), verbose=False, log_enabled=True
+                db,
+                str(item.get("id", EMPTY_STRING)),
+                verbose=False,
+                log_enabled=DEFAULT_LOG_ENABLED,
             )
 
             dropbox_file_path = find_first_dropbox_file(
@@ -51,8 +71,8 @@ def perform_cleanup(
 
             safe_delete_file(
                 dropbox_file_path,
-                reason="remove dropbox dir file",
-                log_enabled=True,
+                reason=DROPBOX_FILE_DELETE_REASON,
+                log_enabled=DEFAULT_LOG_ENABLED,
                 verbose=False,
             )
 
@@ -65,18 +85,23 @@ def perform_cleanup(
 
         safe_delete_file(
             item.get("path_local_dir"),
-            reason="remove local downloaded file",
-            log_enabled=True,
+            reason=LOCAL_FILE_DELETE_REASON,
+            log_enabled=DEFAULT_LOG_ENABLED,
             verbose=False,
         )
 
     # Step 2: Delete non-matching duplicate tracks from Rekordbox collection
     for item in duplicates:
-        if str(item.get("id", "")) == str(metadata_owner_item.get("id", "")):
+        if str(item.get("id", EMPTY_STRING)) == str(
+            metadata_owner_item.get("id", EMPTY_STRING)
+        ):
             continue
 
         delete_rekordbox_track(
-            db, str(item.get("id", "")), verbose=False, log_enabled=True
+            db,
+            str(item.get("id", EMPTY_STRING)),
+            verbose=False,
+            log_enabled=DEFAULT_LOG_ENABLED,
         )
 
     # Step 3: Find and delete duplicate files from Dropbox
@@ -91,8 +116,8 @@ def perform_cleanup(
         if dropbox_file_path is not None:
             safe_delete_file(
                 dropbox_file_path,
-                reason="remove dropbox dir file",
-                log_enabled=True,
+                reason=DROPBOX_FILE_DELETE_REASON,
+                log_enabled=DEFAULT_LOG_ENABLED,
                 verbose=False,
             )
 
@@ -103,10 +128,10 @@ def perform_cleanup(
     if dropbox_owner_path is not None:
         relocate_rekordbox_track(
             db,
-            metadata_owner_item.get("id", "?"),
+            metadata_owner_item.get("id", UNKNOWN_CONTENT_ID),
             dropbox_owner_path,
             verbose=False,
-            log_enabled=True,
+            log_enabled=DEFAULT_LOG_ENABLED,
         )
 
 
@@ -116,11 +141,8 @@ def main() -> int:
     try:
         from pyrekordbox import Rekordbox6Database
     except ImportError:
-        print(
-            "pyrekordbox is not installed. Run: pip install pyrekordbox",
-            file=sys.stderr,
-        )
-        return 1
+        print(PYREKORDBOX_IMPORT_ERROR_MESSAGE, file=sys.stderr)
+        return EXIT_CODE_IMPORT_ERROR
 
     db_kwargs: dict[str, Any] = {}
     if args.key:
@@ -129,8 +151,8 @@ def main() -> int:
     try:
         db = Rekordbox6Database(**db_kwargs)
     except Exception as exc:
-        print(f"Failed to open Rekordbox database: {exc}", file=sys.stderr)
-        return 2
+        print(REKORDBOX_OPEN_ERROR_TEMPLATE.format(exc=exc), file=sys.stderr)
+        return EXIT_CODE_DB_OPEN_ERROR
 
     groups: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
 
@@ -154,7 +176,7 @@ def main() -> int:
             should_include_track = True
             if dropbox_base is not None:
                 folder = Path(content.FolderPath)
-                folder = Path(folder.as_posix().lstrip("/"))
+                folder = Path(folder.as_posix().lstrip(ROOT_PATH_PREFIX))
                 rekordbox_file_path = dropbox_base / folder
                 should_include_track = rekordbox_file_path.exists()
 
@@ -181,8 +203,8 @@ def main() -> int:
 
         if not duplicates:
             if not args.titles_only:
-                print("No duplicates found.")
-            return 0
+                print(NO_DUPLICATES_FOUND_MESSAGE)
+            return EXIT_CODE_SUCCESS
 
         # FIXME: for dev purposes only
         # duplicates = [duplicates[0]]
@@ -199,16 +221,16 @@ def main() -> int:
             )
 
         if args.auto_cleanup:
-            commit_fn = getattr(db, "commit", None)
+            commit_fn = getattr(db, REKORDBOX_COMMIT_METHOD, None)
             if callable(commit_fn):
                 commit_fn()
                 if not args.titles_only:
-                    print("\n[DB] Rekordbox database save committed.")
+                    print(DB_COMMIT_SUCCESS_MESSAGE)
 
-        return 0
+        return EXIT_CODE_SUCCESS
 
     finally:
-        close_fn = getattr(db, "close", None)
+        close_fn = getattr(db, REKORDBOX_CLOSE_METHOD, None)
         if callable(close_fn):
             close_fn()
 
