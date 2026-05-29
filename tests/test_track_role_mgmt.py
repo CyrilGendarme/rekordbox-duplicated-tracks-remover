@@ -50,6 +50,48 @@ class TestFindMatchingFiles:
         assert result["file_owner"] is duplicate[1]
         assert result["metadata_owner"] is duplicate[1]
 
+    def test_prefers_record_rip_for_file_owner(self):
+        duplicate = [
+            {
+                "id": "1",
+                "tags": ["Copyright Ok"],
+                "cues": {"hot_cues_cnt": 0},
+            },
+            {
+                "id": "2",
+                "tags": ["Record Rip"],
+                "cues": {"hot_cues_cnt": 0},
+            },
+        ]
+
+        result = find_matching_files(duplicate)
+
+        assert result["file_owner"] is duplicate[1]
+        assert result["metadata_owner"] is duplicate[1]
+
+    def test_prefers_record_rip_over_copyright_ok_when_both_exist(self):
+        duplicate = [
+            {
+                "id": "1",
+                "tags": ["Copyright Ok"],
+                "cues": {"hot_cues_cnt": 0},
+            },
+            {
+                "id": "2",
+                "tags": ["Record Rip"],
+                "cues": {"hot_cues_cnt": 0},
+            },
+            {
+                "id": "3",
+                "tags": [],
+                "cues": {"hot_cues_cnt": 0},
+            },
+        ]
+
+        result = find_matching_files(duplicate)
+
+        assert result["file_owner"] is duplicate[1]
+
     def test_accepts_single_string_tag_values(self):
         duplicate = [
             {

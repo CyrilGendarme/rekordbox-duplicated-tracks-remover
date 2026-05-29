@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from config import COPYRIGHT_OK_TAG, HOT_CUES_COUNT_KEY, NOT_TAGGED_TAG
+from config import COPYRIGHT_OK_TAG, HOT_CUES_COUNT_KEY, NOT_TAGGED_TAG, RECORD_RIP_TAG
 
 def _item_tags_lower(item: dict[str, Any]) -> set[str]:
     raw_tags = item.get("tags") or []
@@ -16,10 +16,19 @@ def _item_tags_lower(item: dict[str, Any]) -> set[str]:
 def _select_file_owner_item(items: list[dict[str, Any]]) -> dict[str, Any] | None:
     """Choose which duplicate should keep the physical file.
 
-    Rule: if one track has tag "Copyright Ok", prefer that one.
+    Priority:
+    1) Track tagged as "record rip"
+    2) Track tagged as "Copyright Ok"
+    3) Fallback to first item
     """
     if not items:
         return None
+
+    record_rip_candidates = [
+        item for item in items if RECORD_RIP_TAG in _item_tags_lower(item)
+    ]
+    if record_rip_candidates:
+        return record_rip_candidates[0]
 
     copyright_candidates = [
         item for item in items if COPYRIGHT_OK_TAG in _item_tags_lower(item)

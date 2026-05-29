@@ -207,7 +207,7 @@ def main() -> int:
             return EXIT_CODE_SUCCESS
 
         # FIXME: for dev purposes only
-        # duplicates = [duplicates[0]]
+        duplicates = [duplicates[0]]
 
         for duplicate in duplicates:
             matching_files = find_matching_files(duplicate)

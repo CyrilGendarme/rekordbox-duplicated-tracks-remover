@@ -79,6 +79,7 @@ REKORDBOX_COMMIT_METHOD = "commit"
 REKORDBOX_CLOSE_METHOD = "close"
 
 COPYRIGHT_OK_TAG = "copyright ok"
+RECORD_RIP_TAG = "record rip"
 NOT_TAGGED_TAG = "not tagged"
 
 TRACK_TAG_ATTRIBUTES = ("MyTagNames", "MyTags", "Tags")
