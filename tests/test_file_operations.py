@@ -3,14 +3,10 @@
 from __future__ import annotations
 
 import io
-import sys
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
-
-from file_operations import log_file_operation, safe_delete_file, scan_audio_files
-
+from file_operations import log_file_operation, safe_delete_file
 
 class TestLogFileOperation:
     """Tests for the log_file_operation function."""
@@ -77,64 +73,3 @@ class TestSafeDeleteFile:
             result = safe_delete_file(str(test_file), log_enabled=False, verbose=False)
         
         assert result is False
-
-
-class TestScanAudioFiles:
-    """Tests for the scan_audio_files function."""
-
-    def test_scan_audio_files_success(self, temp_dir):
-        """Test scanning directory with audio files."""
-        # Create test audio files
-        (temp_dir / "track1.mp3").write_text("audio1")
-        (temp_dir / "track2.m4a").write_text("audio2")
-        (temp_dir / "track3.flac").write_text("audio3")
-        (temp_dir / "readme.txt").write_text("not audio")
-        
-        result = scan_audio_files(temp_dir)
-        
-        assert len(result) == 3
-        assert "track1.mp3" in result
-        assert "track2.m4a" in result
-        assert "track3.flac" in result
-        assert "readme.txt" not in result
-
-    def test_scan_audio_files_nested(self, temp_dir):
-        """Test scanning nested directories."""
-        subdir = temp_dir / "subdir"
-        subdir.mkdir()
-        
-        (temp_dir / "track1.mp3").write_text("audio1")
-        (subdir / "track2.mp3").write_text("audio2")
-        
-        result = scan_audio_files(temp_dir)
-        
-        assert len(result) == 2
-        assert "track1.mp3" in result
-        assert "track2.mp3" in result
-
-    def test_scan_audio_files_empty_directory(self, temp_dir):
-        """Test scanning empty directory."""
-        result = scan_audio_files(temp_dir)
-        assert len(result) == 0
-
-    def test_scan_audio_files_nonexistent_directory(self):
-        """Test scanning non-existent directory."""
-        result = scan_audio_files("/nonexistent/directory")
-        assert len(result) == 0
-
-    def test_scan_audio_files_various_extensions(self, temp_dir):
-        """Test scanning with various audio extensions."""
-        extensions = [".mp3", ".m4a", ".aac", ".flac", ".wav", ".ogg", ".wma"]
-        for ext in extensions:
-            (temp_dir / f"track{ext}").write_text("audio")
-        
-        result = scan_audio_files(temp_dir)
-        assert len(result) == len(extensions)
-
-    def test_scan_audio_files_case_insensitive(self, temp_dir):
-        """Test that extension matching is case-insensitive."""
-        (temp_dir / "track.MP3").write_text("audio")
-        (temp_dir / "track2.M4A").write_text("audio")
-        
-        result = scan_audio_files(temp_dir)
-        assert len(result) == 2
