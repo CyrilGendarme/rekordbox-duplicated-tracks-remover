@@ -56,8 +56,6 @@ def perform_cleanup(
                 verbose=False,
             )
 
-            # print(f"\n[DRY RUN] UNIQUE FILE")
-
             return
 
     # Step 1: Delete all items from local directory, except the selected file owner item
@@ -72,10 +70,6 @@ def perform_cleanup(
             verbose=False,
         )
 
-        # print(
-        #     f"\n[DRY RUN] Would delete local file : {item.get('id')} | {item.get('path_local_dir')}"
-        # )
-
     # Step 2: Delete non-matching duplicate tracks from Rekordbox collection
     for item in duplicates:
         if str(item.get("id", "")) == str(metadata_owner_item.get("id", "")):
@@ -84,8 +78,6 @@ def perform_cleanup(
         delete_rekordbox_track(
             db, str(item.get("id", "")), verbose=False, log_enabled=True
         )
-
-        # print(f"\n[DRY RUN] Would delete Rekordbox track : {item.get('id')}")
 
     # Step 3: Find and delete duplicate files from Dropbox
     for item in duplicates:
@@ -104,10 +96,6 @@ def perform_cleanup(
                 verbose=False,
             )
 
-        # print(
-        #     f"\n[DRY RUN] Would delete Dropbox file : {item.get('id')} | {dropbox_file_path}"
-        # )
-
     # Step 4: Relocate remaining track to Dropbox
     dropbox_owner_path = find_first_dropbox_file(
         dropbox_dir, Path(file_owner_item.get("path_rekordbox_dir", "")).name
@@ -120,10 +108,6 @@ def perform_cleanup(
             verbose=False,
             log_enabled=True,
         )
-
-    # print(
-    #     f"\n[DRY RUN] Would relocate track with id: {metadata_owner_item.get('id', '?')} to Dropbox path: {find_first_dropbox_file(dropbox_dir, Path(file_owner_item.get('path', '')).name)}."
-    # )
 
 
 def main() -> int:
@@ -153,6 +137,8 @@ def main() -> int:
     try:
         tracks = db.get_content()
 
+        dropbox_base = Path(args.dropbox_dir) if args.dropbox_dir else None
+
         for content in tracks:
             title = safe_string(getattr(content, "Title", ""))
             artist = get_artist_name(content)
@@ -165,12 +151,14 @@ def main() -> int:
                 normalize(artist, args.case_sensitive),
             )
 
-            # Workaround to solve strange db entries duplicated (fuck Rekordbox)
-            base = Path(args.dropbox_dir)
-            folder = Path(content.FolderPath)
-            folder = Path(folder.as_posix().lstrip("/"))
-            rekordbox_file_path = base / folder
-            if rekordbox_file_path.exists():
+            should_include_track = True
+            if dropbox_base is not None:
+                folder = Path(content.FolderPath)
+                folder = Path(folder.as_posix().lstrip("/"))
+                rekordbox_file_path = dropbox_base / folder
+                should_include_track = rekordbox_file_path.exists()
+
+            if should_include_track:
                 groups[key].append(
                     {
                         "title": title,
@@ -200,7 +188,6 @@ def main() -> int:
         # duplicates = [duplicates[0]]
 
         for duplicate in duplicates:
-
             matching_files = find_matching_files(duplicate)
 
             perform_cleanup(

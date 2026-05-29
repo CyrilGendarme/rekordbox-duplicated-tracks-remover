@@ -24,7 +24,6 @@ def _select_file_owner_item(items: list[dict[str, Any]]) -> dict[str, Any] | Non
         item for item in items if "copyright ok" in _item_tags_lower(item)
     ]
     if copyright_candidates:
-        # print("---- found copyright ok candidate")
         return copyright_candidates[0]
 
     return items[0]
@@ -41,24 +40,31 @@ def _select_metadata_owner_item(
     3) Fallback to file owner
     """
 
-    def hot_cues_count(item: dict[str, Any]) -> int:
-        return (item.get("cues") or {}).get("hot_cues_cnt", 0)
-
-    def is_not_tagged(item: dict[str, Any]) -> bool:
-        return "not tagged" in _item_tags_lower(item)
+    scored_items = [
+        {
+            "item": item,
+            "hot_cues_count": (item.get("cues") or {}).get("hot_cues_cnt", 0),
+            "is_not_tagged": "not tagged" in _item_tags_lower(item),
+        }
+        for item in items
+    ]
 
     # --- Rule 1: Prefer items with hot cues ---
-    max_hot = max(hot_cues_count(item) for item in items)
+    max_hot = max(candidate["hot_cues_count"] for candidate in scored_items)
     if max_hot > 0:
-        candidates = [item for item in items if hot_cues_count(item) == max_hot]
-        return candidates[0]  # deterministic enough, or add tie-breaker if needed
+        candidates = [
+            candidate["item"]
+            for candidate in scored_items
+            if candidate["hot_cues_count"] == max_hot
+        ]
+        return candidates[0]
 
     # --- Rule 2: Prefer items NOT tagged as "Not Tagged" ---
-    not_tagged_flags = [is_not_tagged(item) for item in items]
+    not_tagged_flags = [candidate["is_not_tagged"] for candidate in scored_items]
     if any(not_tagged_flags) and not all(not_tagged_flags):
-        for item in items:
-            if not is_not_tagged(item):
-                return item
+        for candidate in scored_items:
+            if not candidate["is_not_tagged"]:
+                return candidate["item"]
 
     # --- Rule 3: fallback ---
     return _select_file_owner_item(items)
@@ -69,21 +75,7 @@ def find_matching_files(
 ) -> dict[str, dict[str, Any]] | None:
     """Find matching files and optionally cleanup/relocate."""
 
-    # print(f"\n\n\n\n=== original duplicate ===")
-    # for item in duplicate:
-    #     print(
-    #         f"-\nRekordbox: id={item['id']} title='{item['title']}' artist='{item['artist']}' path_rekordbox_dir='{item['path_rekordbox_dir']}' path_local_dir='{item['path_local_dir']}' tags='{item['tags']}' cues='{item['cues']}'"
-    #     )
-
     file_owner_item = _select_file_owner_item(duplicate)
     metadata_owner_item = _select_metadata_owner_item(duplicate)
-
-    # print(f"\n=== MATCHED GROUP ===")
-    # print(
-    #     f"Metadata owner: {metadata_owner_item['artist']} - {metadata_owner_item['title']} (id={metadata_owner_item['id']})"
-    # )
-    # print(
-    #     f"File owner: {file_owner_item['artist']} - {file_owner_item['title']} (id={file_owner_item['id']})"
-    # )
 
     return {"file_owner": file_owner_item, "metadata_owner": metadata_owner_item}

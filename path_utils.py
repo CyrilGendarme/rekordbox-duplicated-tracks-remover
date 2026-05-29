@@ -21,8 +21,6 @@ def find_first_dropbox_file(
 ) -> str | None:
     """Find the first occurrence of a file in the Dropbox directory tree."""
 
-    print(f"Searching for '{filename}' in Dropbox directory: {dropbox_dir}")
-
     if not dropbox_dir or not filename:
         return None
 
@@ -34,25 +32,35 @@ def find_first_dropbox_file(
     if not dropbox_root.exists():
         return None
 
-    # Fast path: exact filename lookup.
-    for file_path in dropbox_root.rglob(target_name):
-        if file_path.is_file():
-            return str(file_path)
-
-    # Fallback 1: case-insensitive filename lookup.
     target_name_casefold = target_name.casefold()
+    target_normalized = normalize_filename(target_name)
+
+    first_case_insensitive_match: str | None = None
+    first_normalized_match: str | None = None
     for file_path in dropbox_root.rglob("*"):
-        if file_path.is_file() and file_path.name.casefold() == target_name_casefold:
+        if not file_path.is_file():
+            continue
+
+        if file_path.name == target_name:
             return str(file_path)
 
-    # Fallback 2: compare normalized stems to tolerate punctuation differences.
-    target_normalized = normalize_filename(target_name)
-    if target_normalized:
-        for file_path in dropbox_root.rglob("*"):
-            if (
-                file_path.is_file()
-                and normalize_filename(file_path.name) == target_normalized
-            ):
-                return str(file_path)
+        if (
+            first_case_insensitive_match is None
+            and file_path.name.casefold() == target_name_casefold
+        ):
+            first_case_insensitive_match = str(file_path)
+
+        if (
+            target_normalized
+            and first_normalized_match is None
+            and normalize_filename(file_path.name) == target_normalized
+        ):
+            first_normalized_match = str(file_path)
+
+    if first_case_insensitive_match is not None:
+        return first_case_insensitive_match
+
+    if first_normalized_match is not None:
+        return first_normalized_match
 
     return None
