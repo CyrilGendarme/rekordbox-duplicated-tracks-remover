@@ -41,18 +41,18 @@ class TestPerformCleanup:
                     "C:/local/duplicate.mp3",
                     reason="remove local downloaded file",
                     log_enabled=True,
-                    verbose=False,
+                    verbose=True,
                 ),
                 call(
                     "C:/dropbox/duplicate.mp3",
                     reason="remove dropbox dir file",
                     log_enabled=True,
-                    verbose=False,
+                    verbose=True,
                 ),
             ]
         )
         mock_delete_track.assert_called_once_with(
-            ANY, "2", verbose=False, log_enabled=True
+            ANY, "2", verbose=True, log_enabled=True
         )
         mock_relocate.assert_not_called()
 
@@ -97,24 +97,24 @@ class TestPerformCleanup:
                     "C:/local/meta.mp3",
                     reason="remove local downloaded file",
                     log_enabled=True,
-                    verbose=False,
+                    verbose=True,
                 ),
                 call(
                     "C:/dropbox/meta.mp3",
                     reason="remove dropbox dir file",
                     log_enabled=True,
-                    verbose=False,
+                    verbose=True,
                 ),
             ]
         )
         mock_delete_track.assert_called_once_with(
-            mock_db, "1", verbose=False, log_enabled=True
+            mock_db, "1", verbose=True, log_enabled=True
         )
         mock_relocate.assert_called_once_with(
             mock_db,
             "2",
             "C:/dropbox/owner.mp3",
-            verbose=False,
+            verbose=True,
             log_enabled=True,
         )
 

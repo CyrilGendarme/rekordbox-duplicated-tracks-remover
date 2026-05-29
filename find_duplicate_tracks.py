@@ -14,6 +14,7 @@ from cli import parse_args
 from config import (
     DB_COMMIT_SUCCESS_MESSAGE,
     DEFAULT_LOG_ENABLED,
+    DEFAULT_VERBOSE,
     DROPBOX_FILE_DELETE_REASON,
     EMPTY_STRING,
     EXIT_CODE_DB_OPEN_ERROR,
@@ -55,13 +56,13 @@ def perform_cleanup(
                 item.get("path_local_dir"),
                 reason=LOCAL_FILE_DELETE_REASON,
                 log_enabled=DEFAULT_LOG_ENABLED,
-                verbose=False,
+                verbose=DEFAULT_VERBOSE,
             )
 
             delete_rekordbox_track(
                 db,
                 str(item.get("id", EMPTY_STRING)),
-                verbose=False,
+                verbose=DEFAULT_VERBOSE,
                 log_enabled=DEFAULT_LOG_ENABLED,
             )
 
@@ -73,7 +74,7 @@ def perform_cleanup(
                 dropbox_file_path,
                 reason=DROPBOX_FILE_DELETE_REASON,
                 log_enabled=DEFAULT_LOG_ENABLED,
-                verbose=False,
+                verbose=DEFAULT_VERBOSE,
             )
 
             return
@@ -87,7 +88,7 @@ def perform_cleanup(
             item.get("path_local_dir"),
             reason=LOCAL_FILE_DELETE_REASON,
             log_enabled=DEFAULT_LOG_ENABLED,
-            verbose=False,
+            verbose=DEFAULT_VERBOSE,
         )
 
     # Step 2: Delete non-matching duplicate tracks from Rekordbox collection
@@ -100,7 +101,7 @@ def perform_cleanup(
         delete_rekordbox_track(
             db,
             str(item.get("id", EMPTY_STRING)),
-            verbose=False,
+            verbose=DEFAULT_VERBOSE,
             log_enabled=DEFAULT_LOG_ENABLED,
         )
 
@@ -118,7 +119,7 @@ def perform_cleanup(
                 dropbox_file_path,
                 reason=DROPBOX_FILE_DELETE_REASON,
                 log_enabled=DEFAULT_LOG_ENABLED,
-                verbose=False,
+                verbose=DEFAULT_VERBOSE,
             )
 
     # Step 4: Relocate remaining track to Dropbox
@@ -130,7 +131,7 @@ def perform_cleanup(
             db,
             metadata_owner_item.get("id", UNKNOWN_CONTENT_ID),
             dropbox_owner_path,
-            verbose=False,
+            verbose=DEFAULT_VERBOSE,
             log_enabled=DEFAULT_LOG_ENABLED,
         )
 
@@ -202,12 +203,11 @@ def main() -> int:
         )
 
         if not duplicates:
-            if not args.titles_only:
-                print(NO_DUPLICATES_FOUND_MESSAGE)
+            print(NO_DUPLICATES_FOUND_MESSAGE)
             return EXIT_CODE_SUCCESS
 
-        # FIXME: for dev purposes only
-        duplicates = [duplicates[0]]
+        if args.test_mode:
+            duplicates = [duplicates[0]]
 
         for duplicate in duplicates:
             matching_files = find_matching_files(duplicate)
