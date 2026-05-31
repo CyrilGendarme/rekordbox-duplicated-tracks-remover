@@ -15,6 +15,7 @@ from config import (
     DB_COMMIT_SUCCESS_MESSAGE,
     DEFAULT_LOG_ENABLED,
     DEFAULT_VERBOSE,
+    DRY_RUN_PREFIX,
     DROPBOX_FILE_DELETE_REASON,
     EMPTY_STRING,
     EXIT_CODE_DB_OPEN_ERROR,
@@ -45,6 +46,8 @@ def perform_cleanup(
     metadata_owner_item,
     db: Any,
     dropbox_dir: str,
+    *,
+    dry_run: bool = False,
 ) -> None:
 
     if file_owner_item is metadata_owner_item:
@@ -52,30 +55,49 @@ def perform_cleanup(
             if item is file_owner_item:
                 continue
 
-            safe_delete_file(
-                item.get("path_local_dir"),
-                reason=LOCAL_FILE_DELETE_REASON,
-                log_enabled=DEFAULT_LOG_ENABLED,
-                verbose=DEFAULT_VERBOSE,
-            )
+            if dry_run:
+                print(
+                    f"{DRY_RUN_PREFIX} Would delete local file: "
+                    f"{item.get('path_local_dir')}",
+                    file=sys.stderr,
+                )
+                print(
+                    f"{DRY_RUN_PREFIX} Would delete Rekordbox content "
+                    f"id={item.get('id', EMPTY_STRING)}",
+                    file=sys.stderr,
+                )
+            else:
+                safe_delete_file(
+                    item.get("path_local_dir"),
+                    reason=LOCAL_FILE_DELETE_REASON,
+                    log_enabled=DEFAULT_LOG_ENABLED,
+                    verbose=DEFAULT_VERBOSE,
+                )
 
-            delete_rekordbox_track(
-                db,
-                str(item.get("id", EMPTY_STRING)),
-                verbose=DEFAULT_VERBOSE,
-                log_enabled=DEFAULT_LOG_ENABLED,
-            )
+                delete_rekordbox_track(
+                    db,
+                    str(item.get("id", EMPTY_STRING)),
+                    verbose=DEFAULT_VERBOSE,
+                    log_enabled=DEFAULT_LOG_ENABLED,
+                )
 
             dropbox_file_path = find_first_dropbox_file(
                 dropbox_dir, Path(item.get("path_rekordbox_dir", "")).name
             )
 
-            safe_delete_file(
-                dropbox_file_path,
-                reason=DROPBOX_FILE_DELETE_REASON,
-                log_enabled=DEFAULT_LOG_ENABLED,
-                verbose=DEFAULT_VERBOSE,
-            )
+            if dry_run:
+                print(
+                    f"{DRY_RUN_PREFIX} Would delete Dropbox file: "
+                    f"{dropbox_file_path}",
+                    file=sys.stderr,
+                )
+            else:
+                safe_delete_file(
+                    dropbox_file_path,
+                    reason=DROPBOX_FILE_DELETE_REASON,
+                    log_enabled=DEFAULT_LOG_ENABLED,
+                    verbose=DEFAULT_VERBOSE,
+                )
 
             return
 
@@ -84,12 +106,19 @@ def perform_cleanup(
         if item is file_owner_item:
             continue
 
-        safe_delete_file(
-            item.get("path_local_dir"),
-            reason=LOCAL_FILE_DELETE_REASON,
-            log_enabled=DEFAULT_LOG_ENABLED,
-            verbose=DEFAULT_VERBOSE,
-        )
+        if dry_run:
+            print(
+                f"{DRY_RUN_PREFIX} Would delete local file: "
+                f"{item.get('path_local_dir')}",
+                file=sys.stderr,
+            )
+        else:
+            safe_delete_file(
+                item.get("path_local_dir"),
+                reason=LOCAL_FILE_DELETE_REASON,
+                log_enabled=DEFAULT_LOG_ENABLED,
+                verbose=DEFAULT_VERBOSE,
+            )
 
     # Step 2: Delete non-matching duplicate tracks from Rekordbox collection
     for item in duplicates:
@@ -98,12 +127,19 @@ def perform_cleanup(
         ):
             continue
 
-        delete_rekordbox_track(
-            db,
-            str(item.get("id", EMPTY_STRING)),
-            verbose=DEFAULT_VERBOSE,
-            log_enabled=DEFAULT_LOG_ENABLED,
-        )
+        if dry_run:
+            print(
+                f"{DRY_RUN_PREFIX} Would delete Rekordbox content "
+                f"id={item.get('id', EMPTY_STRING)}",
+                file=sys.stderr,
+            )
+        else:
+            delete_rekordbox_track(
+                db,
+                str(item.get("id", EMPTY_STRING)),
+                verbose=DEFAULT_VERBOSE,
+                log_enabled=DEFAULT_LOG_ENABLED,
+            )
 
     # Step 3: Find and delete duplicate files from Dropbox
     for item in duplicates:
@@ -115,25 +151,40 @@ def perform_cleanup(
         )
 
         if dropbox_file_path is not None:
-            safe_delete_file(
-                dropbox_file_path,
-                reason=DROPBOX_FILE_DELETE_REASON,
-                log_enabled=DEFAULT_LOG_ENABLED,
-                verbose=DEFAULT_VERBOSE,
-            )
+            if dry_run:
+                print(
+                    f"{DRY_RUN_PREFIX} Would delete Dropbox file: "
+                    f"{dropbox_file_path}",
+                    file=sys.stderr,
+                )
+            else:
+                safe_delete_file(
+                    dropbox_file_path,
+                    reason=DROPBOX_FILE_DELETE_REASON,
+                    log_enabled=DEFAULT_LOG_ENABLED,
+                    verbose=DEFAULT_VERBOSE,
+                )
 
     # Step 4: Relocate remaining track to Dropbox
     dropbox_owner_path = find_first_dropbox_file(
         dropbox_dir, Path(file_owner_item.get("path_rekordbox_dir", "")).name
     )
     if dropbox_owner_path is not None:
-        relocate_rekordbox_track(
-            db,
-            metadata_owner_item.get("id", UNKNOWN_CONTENT_ID),
-            dropbox_owner_path,
-            verbose=DEFAULT_VERBOSE,
-            log_enabled=DEFAULT_LOG_ENABLED,
-        )
+        if dry_run:
+            print(
+                f"{DRY_RUN_PREFIX} Would relocate Rekordbox content "
+                f"id={metadata_owner_item.get('id', UNKNOWN_CONTENT_ID)} -> "
+                f"{dropbox_owner_path}",
+                file=sys.stderr,
+            )
+        else:
+            relocate_rekordbox_track(
+                db,
+                metadata_owner_item.get("id", UNKNOWN_CONTENT_ID),
+                dropbox_owner_path,
+                verbose=DEFAULT_VERBOSE,
+                log_enabled=DEFAULT_LOG_ENABLED,
+            )
 
 
 def main() -> int:
@@ -218,14 +269,17 @@ def main() -> int:
                 matching_files["metadata_owner"],
                 db,
                 args.dropbox_dir,
+                dry_run=args.dry_run,
             )
 
-        if args.auto_cleanup:
+        if args.auto_cleanup and not args.dry_run:
             commit_fn = getattr(db, REKORDBOX_COMMIT_METHOD, None)
             if callable(commit_fn):
                 commit_fn()
                 if not args.titles_only:
                     print(DB_COMMIT_SUCCESS_MESSAGE)
+        elif args.auto_cleanup and args.dry_run and not args.titles_only:
+            print(f"{DRY_RUN_PREFIX} Rekordbox commit skipped.")
 
         return EXIT_CODE_SUCCESS
 

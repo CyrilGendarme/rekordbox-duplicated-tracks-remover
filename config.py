@@ -21,6 +21,9 @@ CLI_DROPBOX_DIR_HELP = "Dropbox rekordbox folder path for file consolidation."
 CLI_AUTO_CLEANUP_HELP = (
     "Automatically cleanup and relocate files (requires --dropbox-dir)."
 )
+CLI_DRY_RUN_HELP = (
+    "Preview cleanup actions without deleting, relocating, or committing changes."
+)
 CLI_TEST_MODE_HELP = "Test mode: process only first match then exit."
 CLI_TITLES_ONLY_HELP = "Only print 'artist - title' lines to console."
 
@@ -44,6 +47,7 @@ PYREKORDBOX_IMPORT_ERROR_MESSAGE = (
 REKORDBOX_OPEN_ERROR_TEMPLATE = "Failed to open Rekordbox database: {exc}"
 NO_DUPLICATES_FOUND_MESSAGE = "No duplicates found."
 DB_COMMIT_SUCCESS_MESSAGE = "\n[DB] Rekordbox database save committed."
+DRY_RUN_PREFIX = "[DRY-RUN]"
 
 FILE_OPERATION_PREFIX = "[FILE OP]"
 FILE_OPERATION_WIDTH = 20

@@ -152,3 +152,39 @@ class TestPerformCleanup:
         assert mock_delete_file.call_count == 1
         mock_delete_track.assert_called_once()
         mock_relocate.assert_not_called()
+
+    @patch("find_duplicate_tracks.relocate_rekordbox_track")
+    @patch("find_duplicate_tracks.find_first_dropbox_file")
+    @patch("find_duplicate_tracks.delete_rekordbox_track")
+    @patch("find_duplicate_tracks.safe_delete_file")
+    def test_dry_run_logs_only_and_skips_mutations(
+        self,
+        mock_delete_file,
+        mock_delete_track,
+        mock_find_dropbox,
+        mock_relocate,
+    ):
+        file_owner = {
+            "id": "1",
+            "path_local_dir": "C:/local/owner.mp3",
+            "path_rekordbox_dir": "/rb/owner.mp3",
+        }
+        metadata_owner = {
+            "id": "2",
+            "path_local_dir": "C:/local/meta.mp3",
+            "path_rekordbox_dir": "/rb/meta.mp3",
+        }
+        mock_find_dropbox.side_effect = ["C:/dropbox/meta.mp3", "C:/dropbox/owner.mp3"]
+
+        perform_cleanup(
+            [file_owner, metadata_owner],
+            file_owner,
+            metadata_owner,
+            Mock(),
+            "C:/dropbox",
+            dry_run=True,
+        )
+
+        mock_delete_file.assert_not_called()
+        mock_delete_track.assert_not_called()
+        mock_relocate.assert_not_called()

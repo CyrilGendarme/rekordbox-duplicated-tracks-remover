@@ -8,6 +8,7 @@ from config import (
     CLI_AUTO_CLEANUP_HELP,
     CLI_CASE_SENSITIVE_HELP,
     CLI_DESCRIPTION,
+    CLI_DRY_RUN_HELP,
     CLI_DROPBOX_DIR_HELP,
     CLI_INCLUDE_EMPTY_HELP,
     CLI_KEY_HELP,
@@ -47,6 +48,11 @@ def parse_args() -> argparse.Namespace:
         "--auto-cleanup",
         action="store_true",
         help=CLI_AUTO_CLEANUP_HELP,
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help=CLI_DRY_RUN_HELP,
     )
     parser.add_argument(
         "--test-mode",

@@ -46,6 +46,7 @@ Optional flags:
 - `--youtube-dir <path>`: scan directory for audio files and match against duplicates
 - `--dropbox-dir <path>`: Dropbox rekordbox folder path for file consolidation
 - `--auto-cleanup`: automatically cleanup and relocate files (requires --dropbox-dir)
+- `--dry-run`: preview cleanup/relink actions without changing files or committing DB updates
 - `--test-mode`: process only first match then exit (for testing)
 - `--titles-only`: only print 'artist - title' lines to console
 

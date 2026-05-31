@@ -16,13 +16,14 @@ class TestParseArgs:
         """Test default argument values."""
         with patch("sys.argv", ["prog"]):
             args = parse_args()
-        
+
         assert args.key is None
         assert args.case_sensitive is False
         assert args.include_empty is False
         assert args.youtube_dir is None
         assert args.dropbox_dir is None
         assert args.auto_cleanup is False
+        assert args.dry_run is False
         assert args.test_mode is False
         assert args.titles_only is False
 
@@ -30,56 +31,63 @@ class TestParseArgs:
         """Test parsing with --key argument."""
         with patch("sys.argv", ["prog", "--key", "test_key_123"]):
             args = parse_args()
-        
+
         assert args.key == "test_key_123"
 
     def test_parse_args_case_sensitive(self):
         """Test parsing with --case-sensitive flag."""
         with patch("sys.argv", ["prog", "--case-sensitive"]):
             args = parse_args()
-        
+
         assert args.case_sensitive is True
 
     def test_parse_args_include_empty(self):
         """Test parsing with --include-empty flag."""
         with patch("sys.argv", ["prog", "--include-empty"]):
             args = parse_args()
-        
+
         assert args.include_empty is True
 
     def test_parse_args_youtube_dir(self):
         """Test parsing with --youtube-dir argument."""
         with patch("sys.argv", ["prog", "--youtube-dir", "/path/to/youtube"]):
             args = parse_args()
-        
+
         assert args.youtube_dir == "/path/to/youtube"
 
     def test_parse_args_dropbox_dir(self):
         """Test parsing with --dropbox-dir argument."""
         with patch("sys.argv", ["prog", "--dropbox-dir", "/path/to/dropbox"]):
             args = parse_args()
-        
+
         assert args.dropbox_dir == "/path/to/dropbox"
 
     def test_parse_args_auto_cleanup(self):
         """Test parsing with --auto-cleanup flag."""
         with patch("sys.argv", ["prog", "--auto-cleanup"]):
             args = parse_args()
-        
+
         assert args.auto_cleanup is True
 
     def test_parse_args_test_mode(self):
         """Test parsing with --test-mode flag."""
         with patch("sys.argv", ["prog", "--test-mode"]):
             args = parse_args()
-        
+
         assert args.test_mode is True
+
+    def test_parse_args_dry_run(self):
+        """Test parsing with --dry-run flag."""
+        with patch("sys.argv", ["prog", "--dry-run"]):
+            args = parse_args()
+
+        assert args.dry_run is True
 
     def test_parse_args_titles_only(self):
         """Test parsing with --titles-only flag."""
         with patch("sys.argv", ["prog", "--titles-only"]):
             args = parse_args()
-        
+
         assert args.titles_only is True
 
     def test_parse_args_multiple_flags(self):
@@ -98,7 +106,7 @@ class TestParseArgs:
             ],
         ):
             args = parse_args()
-        
+
         assert args.case_sensitive is True
         assert args.youtube_dir == "/youtube"
         assert args.dropbox_dir == "/dropbox"
